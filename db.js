@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const { UUID, UUIDV4, STRING } = Sequelize;
-const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/acme_oauth');
+const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/acme_db');
 const jwt = require('jwt-simple');
 
 const User = conn.define('user', {
@@ -21,7 +21,7 @@ const User = conn.define('user', {
     type: STRING,
     allowNull: false
   },
-  githubUsername:{
+  githubLogin:{
       type: STRING,
       allowNull: true,
       unique: true
@@ -63,6 +63,8 @@ const syncAndSeed = async()=> {
   const [moe, larry, lucy, ethyl] = await Promise.all(
       users.map( user => User.create({ email: `${user.name}@gmail.com`, password: user.name.toUpperCase()}))
   );
+
+  await User.create({name: `Stella`, email: `s@gmail.com`, password:'S', githubLogin: 49591287});
 };
 
 module.exports = {

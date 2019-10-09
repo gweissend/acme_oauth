@@ -1,215 +1,202 @@
-import React, { Component } from 'react';
-import { render } from 'react-dom';
-import { Provider, connect } from 'react-redux';
-import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
-import { createStore, combineReducers, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
-import axios from 'axios';
-import moment from 'moment';
+import React, { Component } from "react";
+import { render } from "react-dom";
+import { Provider, connect } from "react-redux";
+import { HashRouter, Route, Switch, Redirect } from "react-router-dom";
+import { createStore, combineReducers, applyMiddleware } from "redux";
+import thunk from "redux-thunk";
+import axios from "axios";
+import moment from "moment";
 
 /* STORE */
 const store = createStore(
-    combineReducers({
-      auth: (state={}, action)=> {
-        if(action.type === 'SET_AUTH'){
-          return action.auth;
-        }
-        return state;
-      },
-      logins: (state=[], action)=> {
-        if(action.type === 'SET_LOGINS'){
-          return action.logins;
-        }
-        return state;
+  combineReducers({
+    auth: (state = {}, action) => {
+      if (action.type === "SET_AUTH") {
+        return action.auth;
       }
-    }),
-    applyMiddleware(thunk)
+      return state;
+    },
+    logins: (state = [], action) => {
+      if (action.type === "SET_LOGINS") {
+        return action.logins;
+      }
+      return state;
+    }
+  }),
+  applyMiddleware(thunk)
 );
 
 const actions = {};
-actions.attemptLogin = (credentials, history)=> {
-  return async(dispatch)=> {
-    const response = await axios.post('/api/sessions', credentials);
+actions.attemptLogin = (credentials, history) => {
+  return async dispatch => {
+    const response = await axios.post("/api/sessions", credentials);
     const { token } = response.data;
-    window.localStorage.setItem('token', token);
+    window.localStorage.setItem("token", token);
     await dispatch(actions.attemptSessionLogin());
-    history.push('/');
+    history.push("/");
   };
 };
 
-actions.attemptSessionLogin = ()=> {
-  return async(dispatch)=> {
-    const token = window.localStorage.getItem('token');
-    const auth = (await axios.get('/api/sessions', {
+actions.attemptSessionLogin = () => {
+  return async dispatch => {
+    const token = window.localStorage.getItem("token");
+    const auth = (await axios.get("/api/sessions", {
       headers: {
         authorization: token
       }
     })).data;
-    dispatch({ type: 'SET_AUTH', auth});
+    dispatch({ type: "SET_AUTH", auth });
     dispatch(actions.fetchLogins());
   };
 };
 
-actions.attemptGithubLogin = () => {
-    return async(dispatch) => {
-        const response = await axios.get('/api/github/sessions');
-        const { token } = response.data;
-        window.localStorage.setItem('token', token)
-        await dispatch(actions.attemptSessionLogin())
-        history.push('/')
-    }
-}
 
-actions.fetchLogins = ()=> {
-  return async(dispatch)=> {
-    const token = window.localStorage.getItem('token');
-    const logins = (await axios.get('/api/logins', {
+actions.fetchLogins = () => {
+  return async dispatch => {
+    const token = window.localStorage.getItem("token");
+    const logins = (await axios.get("/api/logins", {
       headers: {
         authorization: token
       }
     })).data;
-    dispatch({ type: 'SET_LOGINS', logins});
+    dispatch({ type: "SET_LOGINS", logins });
   };
 };
 
-actions.logout = ()=> {
-  return async(dispatch)=> {
-    window.localStorage.removeItem('token');
-    dispatch({ type: 'SET_AUTH', auth: {}});
+actions.logout = () => {
+  return async dispatch => {
+    window.localStorage.removeItem("token");
+    dispatch({ type: "SET_AUTH", auth: {} });
   };
 };
 
 /* Login */
-class _Login extends Component{
-  constructor(){
+class _Login extends Component {
+  constructor() {
     super();
     this.state = {
-      email: '',
-      password: '',
-      error: ''
+      email: "",
+      password: "",
+      error: ""
     };
     this.onChange = this.onChange.bind(this);
     this.attemptLogin = this.attemptLogin.bind(this);
-    this.attemptGithubLogin = this.attemptGithubLogin.bind(this);
   }
-  attemptLogin(ev){
+  attemptLogin(ev) {
     ev.preventDefault();
-    const credentials = {...this.state};
+    const credentials = { ...this.state };
     delete credentials.error;
-    this.props.attemptLogin(credentials)
-      .catch(ex => this.setState({ error: 'bad credentials'}));
+    this.props
+      .attemptLogin(credentials)
+      .catch(ex => this.setState({ error: "bad credentials" }));
   }
-  attemptGithubLogin(ev){
-    ev.preventDefault();
-    this.props.attemptGithubLogin()
-        .catch(ex => this.setState({ error: 'bad credentials'}));
+ 
+  onChange(ev) {
+    this.setState({ [ev.target.name]: ev.target.value });
   }
-  onChange(ev){
-    this.setState({[ev.target.name]: ev.target.value });
-  }
-  render(){
+  render() {
     const { error, email, password } = this.state;
-    const { onChange, attemptLogin, attemptGithubLogin } = this;
+    const { onChange, attemptLogin} = this;
     return (
-        <form>
-          {
-            error && <div className='error'>{ error }</div>
-          }
-          <div>
-            <label>Email</label>
-            <input name='email' value={ email } onChange={ onChange } />
-          </div>
-          <div>
-            <label>Password</label>
-            <input type='password' name='password' value={ password } onChange={ onChange } />
-          </div>
-          <button onClick={ attemptLogin }>Login</button>
-          <button onClick={ attemptGithubLogin }>Use Github to Login</button>
-        </form>
+      <form>
+        {error && <div className="error">{error}</div>}
+        <div>
+          <label>Email</label>
+          <input name="email" value={email} onChange={onChange} />
+        </div>
+        <div>
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={onChange}
+          />
+        </div>
+        <button onClick={attemptLogin}>Login</button>
+        <a href="/api/github/sessions">Use Github to Login</a>
+      </form>
     );
   }
 }
 
 const Login = connect(
-  ()=> {
-    return {
-
-    };
+  () => {
+    return {};
   },
-  (dispatch, { history })=> {
+  (dispatch, { history }) => {
     return {
-      attemptLogin: (username)=> dispatch(actions.attemptLogin(username, history)),
-      attemptGithubLogin: ()=> dispatch(actions.attemptGithubLogin( history))
-    }
+      attemptLogin: username =>
+        dispatch(actions.attemptLogin(username, history))
+    };
   }
 )(_Login);
 
-
 /* Home */
-const _Home = ({ auth, logins, logout })=> <div>
-  Home - Welcome { auth.email }
-  <button onClick={ logout }>Logout</button>
-  <ul>
-    {
-      logins.map( login => <li key={ login.id }>{ moment(login.createdAt).format('MM/DD/YYYYY hh:mm:ss a') }</li>)
-    }
-  </ul>
-</div>;
+const _Home = ({ auth, logins, logout }) => (
+  <div>
+    Home - Welcome {auth.email}
+    <button onClick={logout}>Logout</button>
+    <ul>
+      {logins.map(login => (
+        <li key={login.id}>
+          {moment(login.createdAt).format("MM/DD/YYYYY hh:mm:ss a")}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 const Home = connect(
-    ({ auth, logins })=> {
-      return { auth, logins }
-    },
-    (dispatch)=> {
-      return {
-        logout: ()=> dispatch(actions.logout()) 
-      }
-    }
+  ({ auth, logins }) => {
+    return { auth, logins };
+  },
+  dispatch => {
+    return {
+      logout: () => dispatch(actions.logout())
+    };
+  }
 )(_Home);
 
 /* App */
-class _App extends Component{
-  componentDidMount(){
-    this.props.attemptSessionLogin()
-      .catch(ex => console.log(ex));
+class _App extends Component {
+  componentDidMount() {
+    this.props.attemptSessionLogin().catch(ex => console.log(ex));
   }
-  render(){
+  render() {
     const { loggedIn } = this.props;
     return (
       <div>
         <h1>Acme Login</h1>
         <HashRouter>
           <Switch>
-          {
-            loggedIn && (<Route path='/' component= { Home } exact/>)
-          }
-          {
-            !loggedIn && (<Route path='/login' component= { Login } exact/>)
-          }
-          {
-            !loggedIn && <Redirect to='/login' />
-          }
-          {
-            loggedIn && <Redirect to='/' />
-          }
+            {loggedIn && <Route path="/" component={Home} exact />}
+            {!loggedIn && <Route path="/login" component={Login} exact />}
+            {!loggedIn && <Redirect to="/login" />}
+            {loggedIn && <Redirect to="/" />}
           </Switch>
         </HashRouter>
       </div>
     );
   }
-};
+}
 
 const App = connect(
-    ({ auth })=> {
-      return {
-        loggedIn: !!auth.id
-      };
-    },
-    (dispatch)=> {
-      return {
-        attemptSessionLogin: ()=> dispatch(actions.attemptSessionLogin())
-      };
-    }
+  ({ auth }) => {
+    return {
+      loggedIn: !!auth.id
+    };
+  },
+  dispatch => {
+    return {
+      attemptSessionLogin: () => dispatch(actions.attemptSessionLogin())
+    };
+  }
 )(_App);
 
-render(<Provider store={ store }><App /></Provider>, document.querySelector('#root'));
+render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.querySelector("#root")
+);
