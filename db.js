@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const { UUID, UUIDV4, STRING } = Sequelize;
-const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/my_db');
+const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/acme_oauth');
 const jwt = require('jwt-simple');
 
 const User = conn.define('user', {
@@ -20,6 +20,11 @@ const User = conn.define('user', {
   password: {
     type: STRING,
     allowNull: false
+  },
+  githubUsername:{
+      type: STRING,
+      allowNull: true,
+      unique: true
   }
 });
 

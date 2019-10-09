@@ -50,6 +50,16 @@ actions.attemptSessionLogin = ()=> {
   };
 };
 
+actions.attemptGithubLogin = () => {
+    return async(dispatch) => {
+        const response = await axios.get('/api/github/sessions');
+        const { token } = response.data;
+        window.localStorage.setItem('token', token)
+        await dispatch(actions.attemptSessionLogin())
+        history.push('/')
+    }
+}
+
 actions.fetchLogins = ()=> {
   return async(dispatch)=> {
     const token = window.localStorage.getItem('token');
@@ -80,6 +90,7 @@ class _Login extends Component{
     };
     this.onChange = this.onChange.bind(this);
     this.attemptLogin = this.attemptLogin.bind(this);
+    this.attemptGithubLogin = this.attemptGithubLogin.bind(this);
   }
   attemptLogin(ev){
     ev.preventDefault();
@@ -88,12 +99,17 @@ class _Login extends Component{
     this.props.attemptLogin(credentials)
       .catch(ex => this.setState({ error: 'bad credentials'}));
   }
+  attemptGithubLogin(ev){
+    ev.preventDefault();
+    this.props.attemptGithubLogin()
+        .catch(ex => this.setState({ error: 'bad credentials'}));
+  }
   onChange(ev){
     this.setState({[ev.target.name]: ev.target.value });
   }
   render(){
     const { error, email, password } = this.state;
-    const { onChange, attemptLogin } = this;
+    const { onChange, attemptLogin, attemptGithubLogin } = this;
     return (
         <form>
           {
@@ -108,6 +124,7 @@ class _Login extends Component{
             <input type='password' name='password' value={ password } onChange={ onChange } />
           </div>
           <button onClick={ attemptLogin }>Login</button>
+          <button onClick={ attemptGithubLogin }>Use Github to Login</button>
         </form>
     );
   }
@@ -121,7 +138,8 @@ const Login = connect(
   },
   (dispatch, { history })=> {
     return {
-      attemptLogin: (username)=> dispatch(actions.attemptLogin(username, history))
+      attemptLogin: (username)=> dispatch(actions.attemptLogin(username, history)),
+      attemptGithubLogin: ()=> dispatch(actions.attemptGithubLogin( history))
     }
   }
 )(_Login);

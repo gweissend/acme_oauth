@@ -5,6 +5,7 @@ const path = require('path');
 const db = require('./db');
 const { User, Login } = db.models;
 const jwt = require('jwt-simple');
+const axios = require('axios')
 
 const port = process.env.PORT || 3000;
 db.syncAndSeed()
@@ -41,6 +42,15 @@ app.post('/api/sessions', (req, res, next)=> {
   })
   .catch( err => next(err));
 });
+
+app.get('/api/github/sessions', (req, res, next) => {
+    const URL = `https://github.com/login/oauth/authorize!client_id=${process.env.CLIENT_ID}`
+    res.redirect(URL)
+})
+
+app.get('/api/github/callback', (req, res, next) => {
+    
+})
 
 app.get('/api/sessions', (req, res, next)=> {
   if(req.user){
